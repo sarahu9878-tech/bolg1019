@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人記帳網站</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+
+        h1, h2 {
+            color: #2c3e50;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #2e8b57;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background: #e8f5ec;
+        }
+
+        .total {
+            color: #2e8b57;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        /* 讓表格在手機上可以左右滑動 */
+        .table-container {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>我的個人記帳本</h1>
+
+    <div class="card">
+        <h2>新增支出</h2>
+
+        <form action="{{ url_for('add_expense') }}" method="POST">
+
+            <label for="expense_date">消費日期</label>
+            <input
+                type="date"
+                id="expense_date"
+                name="expense_date"
+                value="{{ today }}"
+                required
+            >
+
+            <label for="title">消費項目</label>
+            <input
+                type="text"
+                id="title"
+                name="title"
+                placeholder="例如：午餐"
+                required
+            >
+
+            <label for="amount">消費金額</label>
+            <input
+                type="number"
+                id="amount"
+                name="amount"
+                placeholder="例如：120"
+                min="0.01"
+                step="0.01"
+                required
+            >
+
+            <label for="category">消費分類</label>
+            <select id="category" name="category" required>
+                <option value="">請選擇分類</option>
+                <option value="飲食">飲食</option>
+                <option value="交通">交通</option>
+                <option value="購物">購物</option>
+                <option value="娛樂">娛樂</option>
+                <option value="生活用品">生活用品</option>
+                <option value="其他">其他</option>
+            </select>
+
+            <button type="submit">新增紀錄</button>
+
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>支出總額</h2>
+        <p class="total">
+            NT$ {{ "%.2f"|format(total) }}
+        </p>
+    </div>
+
+    <div class="card">
+        <h2>我的消費紀錄</h2>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>消費日期</th>
+                        <th>消費項目</th>
+                        <th>消費金額</th>
+                        <th>消費分類</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for expense in expenses %}
+                    <tr>
+                        <td>
+                            {{ expense["expense_date"] or "未設定" }}
+                        </td>
+                        <td>{{ expense["title"] }}</td>
+                        <td>
+                            NT$ {{ "%.2f"|format(expense["amount"]) }}
+                        </td>
+                        <td>{{ expense["category"] }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4">目前還沒有任何記帳紀錄。</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>
