@@ -3,168 +3,291 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>個人記帳網站</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>我的個人記帳本</title>
     <style>
+        * { box-sizing: border-box; }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
-            background-color: #f5f7fa;
+            margin: 0;
+            font-family: Arial, "Microsoft JhengHei", sans-serif;
+            background: #f3f6fb;
+            color: #253047;
         }
 
-        h1, h2 {
-            color: #2c3e50;
+        header {
+            background: #3659c9;
+            color: white;
+            padding: 26px 20px;
+            text-align: center;
+        }
+
+        header h1 { margin: 0 0 8px; }
+        header p { margin: 0; opacity: .9; }
+
+        main {
+            max-width: 960px;
+            margin: 28px auto;
+            padding: 0 16px;
         }
 
         .card {
             background: white;
-            padding: 20px;
+            border-radius: 14px;
+            padding: 22px;
             margin-bottom: 20px;
-            border-radius: 10px;
+            box-shadow: 0 3px 15px #172b4d12;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .summary .card { margin: 0; }
+        .muted { color: #6b7280; font-size: 14px; }
+        .amount { color: #3659c9; font-size: 28px; font-weight: bold; }
+
+        form .fields {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 7px;
         }
 
         input, select, button {
             width: 100%;
+            min-height: 42px;
             padding: 10px;
-            margin: 8px 0;
-            box-sizing: border-box;
+            border-radius: 8px;
+            border: 1px solid #d5dbea;
+            font-size: 15px;
         }
 
         button {
-            background: #2e8b57;
+            background: #3659c9;
             color: white;
             border: none;
             cursor: pointer;
+            font-weight: bold;
         }
+
+        button:hover { opacity: .88; }
+        .submit { margin-top: 16px; }
+
+        .table-wrap { overflow-x: auto; }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            background: white;
+            min-width: 540px;
         }
 
         th, td {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
+            padding: 13px 10px;
+            border-bottom: 1px solid #edf0f5;
             text-align: left;
         }
 
-        th {
-            background: #e8f5ec;
+        th { background: #f7f8fc; }
+
+        .delete-button {
+            background: #d94b54;
+            min-height: 34px;
+            padding: 7px 12px;
         }
 
-        .total {
-            color: #2e8b57;
-            font-size: 24px;
-            font-weight: bold;
+        .message {
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            background: #e8f6ed;
         }
 
-        /* 讓表格在手機上可以左右滑動 */
-        .table-container {
-            overflow-x: auto;
+        .message.error {
+            background: #fff0f0;
+            color: #a52222;
+        }
+
+        .empty {
+            text-align: center;
+            color: #777;
+            padding: 28px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: #7b8495;
+            font-size: 13px;
         }
     </style>
 </head>
-
 <body>
+    <header>
+        <h1>我的個人記帳本</h1>
+        <p>記錄每一筆支出，掌握自己的生活</p>
+    </header>
 
-    <h1>我的個人記帳本</h1>
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="message {% if category == 'error' %}error{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endwith %}
 
-    <div class="card">
-        <h2>新增支出</h2>
+        <section class="summary">
+            <div class="card">
+                <div class="muted">累計支出</div>
+                <div class="amount">${{ "%.2f"|format(total) }}</div>
+            </div>
 
-        <form action="{{ url_for('add_expense') }}" method="POST">
+            <div class="card">
+                <div class="muted">記帳筆數</div>
+                <div class="amount">{{ expenses|length }}</div>
+            </div>
+        </section>
 
-            <label for="expense_date">消費日期</label>
-            <input
-                type="date"
-                id="expense_date"
-                name="expense_date"
-                value="{{ today }}"
-                required
-            >
+        <section class="card">
+            <h2>新增一筆記帳</h2>
 
-            <label for="title">消費項目</label>
-            <input
-                type="text"
-                id="title"
-                name="title"
-                placeholder="例如：午餐"
-                required
-            >
+            <form action="{{ url_for('add_expense') }}" method="POST">
+                <div class="fields">
+                    <div>
+                        <label for="expense_date">日期</label>
+                        <input
+                            id="expense_date"
+                            type="date"
+                            name="expense_date"
+                            value="{{ today }}"
+                            required
+                        >
+                    </div>
 
-            <label for="amount">消費金額</label>
-            <input
-                type="number"
-                id="amount"
-                name="amount"
-                placeholder="例如：120"
-                min="0.01"
-                step="0.01"
-                required
-            >
+                    <div>
+                        <label for="title">項目名稱</label>
+                        <input
+                            id="title"
+                            type="text"
+                            name="title"
+                            placeholder="例如：午餐"
+                            maxlength="100"
+                            required
+                        >
+                    </div>
 
-            <label for="category">消費分類</label>
-            <select id="category" name="category" required>
-                <option value="">請選擇分類</option>
-                <option value="飲食">飲食</option>
-                <option value="交通">交通</option>
-                <option value="購物">購物</option>
-                <option value="娛樂">娛樂</option>
-                <option value="生活用品">生活用品</option>
-                <option value="其他">其他</option>
-            </select>
+                    <div>
+                        <label for="amount">金額</label>
+                        <input
+                            id="amount"
+                            type="number"
+                            name="amount"
+                            min="0.01"
+                            step="0.01"
+                            placeholder="例如：120"
+                            required
+                        >
+                    </div>
 
-            <button type="submit">新增紀錄</button>
+                    <div>
+                        <label for="category">支出分類</label>
+                        <select id="category" name="category" required>
+                            <option value="">請選擇分類</option>
+                            <option value="飲食">飲食</option>
+                            <option value="交通">交通</option>
+                            <option value="購物">購物</option>
+                            <option value="娛樂">娛樂</option>
+                            <option value="生活">生活</option>
+                            <option value="學習">學習</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                </div>
 
-        </form>
-    </div>
+                <button class="submit" type="submit">新增記帳</button>
+            </form>
+        </section>
 
-    <div class="card">
-        <h2>支出總額</h2>
-        <p class="total">
-            NT$ {{ "%.2f"|format(total) }}
-        </p>
-    </div>
+        <section class="card">
+            <h2>分類統計</h2>
 
-    <div class="card">
-        <h2>我的消費紀錄</h2>
+            {% if categories %}
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>分類</th>
+                                <th>累計金額</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in categories %}
+                                <tr>
+                                    <td>{{ item["category"] }}</td>
+                                    <td>${{ "%.2f"|format(item["total"]) }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="muted">目前還沒有記帳資料。</p>
+            {% endif %}
+        </section>
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>消費日期</th>
-                        <th>消費項目</th>
-                        <th>消費金額</th>
-                        <th>消費分類</th>
-                    </tr>
-                </thead>
+        <section class="card">
+            <h2>記帳紀錄</h2>
 
-                <tbody>
-                    {% for expense in expenses %}
-                    <tr>
-                        <td>
-                            {{ expense["expense_date"] or "未設定" }}
-                        </td>
-                        <td>{{ expense["title"] }}</td>
-                        <td>
-                            NT$ {{ "%.2f"|format(expense["amount"]) }}
-                        </td>
-                        <td>{{ expense["category"] }}</td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="4">目前還沒有任何記帳紀錄。</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+            {% if expenses %}
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>項目</th>
+                                <th>分類</th>
+                                <th>金額</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for expense in expenses %}
+                                <tr>
+                                    <td>{{ expense["expense_date"] }}</td>
+                                    <td>{{ expense["title"] }}</td>
+                                    <td>{{ expense["category"] }}</td>
+                                    <td>${{ "%.2f"|format(expense["amount"]) }}</td>
+                                    <td>
+                                        <form
+                                            action="{{ url_for('delete_expense', expense_id=expense['id']) }}"
+                                            method="POST"
+                                            onsubmit="return confirm('確定要刪除這筆紀錄嗎？');"
+                                        >
+                                            <button
+                                                class="delete-button"
+                                                type="submit"
+                                            >刪除</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty">尚無記帳紀錄，新增第一筆吧！</div>
+            {% endif %}
+        </section>
+    </main>
 
+    <footer>我的個人記帳本 · 請妥善保管你的帳務資料</footer>
 </body>
 </html>
